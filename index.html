@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0B0A08">
+<title>OVOM · Gargalo Mental</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif;background:#0B0A08;color:#F3ECDD}
+body{display:flex;justify-content:center}
+button{font:inherit}
+.app{width:100%;max-width:760px;min-height:100vh;padding:32px 20px 48px}
+.splash{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.logo{font-family:Georgia,serif;font-size:clamp(42px,9vw,72px);font-weight:700;line-height:1.05}
+.gold{color:#B8912B}
+.muted{color:#93897A}
+.intro{text-align:center;padding-top:20px}
+.cover{width:145px;height:205px;object-fit:cover;border-radius:4px;margin:0 auto 30px;display:block;box-shadow:0 20px 40px rgba(0,0,0,.55)}
+h1{font-family:Georgia,serif;font-size:clamp(36px,8vw,54px);line-height:1.1;margin:0 0 12px}
+.subtitle{color:#B8912B;font-weight:700;margin-bottom:24px}
+.lead{color:#B7AF9F;line-height:1.7;max-width:570px;margin:0 auto 10px}
+.quote{font-family:Georgia,serif;font-style:italic;color:#5F594B;margin:18px auto 8px}
+.smallcaps{text-transform:uppercase;letter-spacing:.18em;font-size:11px;color:#5F594B}
+.btn{border:0;border-radius:4px;background:#B8912B;color:#0B0A08;padding:14px 24px;font-weight:700;cursor:pointer}
+.btn:hover{background:#D4AF37}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:36px}
+.header span{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:#93897A;white-space:nowrap}
+.progress{height:2px;background:#241F16;flex:1}
+.progress i{display:block;height:100%;background:#D4AF37;width:0;transition:.25s}
+.question-num{font-size:12px;color:#5F594B;margin-bottom:16px}
+.question{font-family:Georgia,serif;font-size:clamp(26px,5vw,38px);line-height:1.25;margin:0 0 28px}
+.options{display:grid;gap:12px}
+.option{width:100%;text-align:left;background:#12100D;border:1px solid #2B261D;color:#D9D1C1;padding:17px 18px;border-radius:5px;cursor:pointer;transition:.15s}
+.option:hover{border-color:#B8912B;background:#18140E}
+.result{text-align:center}
+.result h2{font-family:Georgia,serif;font-size:38px;margin:12px 0}
+.result .weak{color:#D9776A;font-weight:800}
+.card{background:#12100D;border:1px solid #2B261D;border-radius:6px;padding:22px;text-align:left;margin:22px 0}
+.radar{display:block;width:min(360px,90vw);height:auto;margin:10px auto 22px}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.note{font-size:12px;color:#5F594B;line-height:1.5;margin-top:20px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+"use strict";
+
+const PILLARS={
+ confianca:{label:"Confiança",title:"Seu gargalo está na confiança",body:"Você pode saber o que precisa fazer, mas alguma parte de você ainda pede permissão para agir. O próximo passo é fortalecer a confiança por meio de pequenas ações concluídas."},
+ mentalidade:{label:"Mentalidade",title:"Seu gargalo está na mentalidade",body:"O modo como você interpreta desafios pode estar segurando sua evolução. Trabalhe as crenças que precedem suas decisões e substitua pensamentos que limitam sua ação."},
+ atitude:{label:"Atitude",title:"Seu gargalo está na atitude",body:"Você provavelmente entende o que deveria fazer, mas existe uma distância entre intenção e postura. O foco agora é transformar entendimento em comportamento."},
+ acao:{label:"Ação",title:"Seu gargalo está na ação",body:"Você pode ter clareza e vontade, mas precisa sair do planejamento e colocar as coisas em movimento. A melhor resposta para esse gargalo é começar pequeno e começar agora."}
+};
+
+const QUESTIONS=[
+{id:"q1",pillar:"confianca",text:"Quando você precisa fazer algo importante, quanto acredita que consegue dar conta?"},
+{id:"q2",pillar:"mentalidade",text:"Quando algo dá errado, você costuma enxergar o problema como uma oportunidade de aprender?"},
+{id:"q3",pillar:"atitude",text:"Quando sabe o que precisa ser feito, você normalmente toma a iniciativa?"},
+{id:"q4",pillar:"acao",text:"Quanto você costuma transformar seus planos em ações concretas?"},
+{id:"q5",pillar:"confianca",text:"Você se sente confortável defendendo suas ideias diante de outras pessoas?"},
+{id:"q6",pillar:"mentalidade",text:"Você consegue mudar de estratégia quando percebe que a maneira atual não está funcionando?"},
+{id:"q7",pillar:"atitude",text:"Mesmo sem estar totalmente preparado, você consegue tomar uma decisão e seguir em frente?"},
+{id:"q8",pillar:"acao",text:"Quando tem uma meta, você mantém uma rotina consistente para avançar?"},
+{id:"q9",pillar:"confianca",text:"Você acredita que merece conquistar aquilo que deseja?"},
+{id:"q10",pillar:"mentalidade",text:"Você costuma questionar pensamentos negativos antes de aceitá-los como verdade?"},
+{id:"q11",pillar:"atitude",text:"Quando surge uma oportunidade, você costuma aproveitá-la em vez de esperar o momento perfeito?"},
+{id:"q12",pillar:"acao",text:"Você termina o que começa com frequência?"}
+];
+
+const SCALE=[
+["1","Quase nunca"],
+["2","Raramente"],
+["3","Às vezes"],
+["4","Frequentemente"],
+["5","Quase sempre"]
+];
+
+let state={step:"splash",index:0,answers:{}};
+const root=document.getElementById("root");
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function scores(){
+ let s={confianca:0,mentalidade:0,atitude:0,acao:0};
+ let n={confianca:0,mentalidade:0,atitude:0,acao:0};
+ QUESTIONS.forEach(q=>{if(state.answers[q.id]){s[q.pillar]+=state.answers[q.id];n[q.pillar]++;}});
+ Object.keys(s).forEach(k=>s[k]=n[k]?s[k]/n[k]:0);
+ return s;
+}
+function weakest(s){return Object.keys(s).reduce((a,b)=>s[a]<=s[b]?a:b);}
+function strongest(s){return Object.keys(s).reduce((a,b)=>s[a]>=s[b]?a:b);}
+
+function radar(s,w){
+ const size=330,c=165,R=118;
+ const order=["confianca","mentalidade","atitude","acao"];
+ const pts=order.map((k,i)=>{
+   const a=-Math.PI/2+i*Math.PI/2;
+   const r=R*(s[k]/5);
+   return [c+r*Math.cos(a),c+r*Math.sin(a),k];
+ });
+ const poly=pts.map(p=>p[0]+","+p[1]).join(" ");
+ let grid="";
+ [1,.75,.5,.25].forEach(r=>{
+   const p=order.map((k,i)=>{const a=-Math.PI/2+i*Math.PI/2;return (c+R*r*Math.cos(a))+","+(c+R*r*Math.sin(a))}).join(" ");
+   grid+='<polygon points="'+p+'" fill="none" stroke="#3A3427" stroke-width="1"/>';
+ });
+ order.forEach((k,i)=>{
+   const a=-Math.PI/2+i*Math.PI/2;
+   grid+='<line x1="'+c+'" y1="'+c+'" x2="'+(c+R*Math.cos(a))+'" y2="'+(c+R*Math.sin(a))+'" stroke="#3A3427"/>';
+ });
+ let labels=order.map((k,i)=>{
+   const a=-Math.PI/2+i*Math.PI/2,x=c+(R+30)*Math.cos(a),y=c+(R+30)*Math.sin(a);
+   return '<text x="'+x+'" y="'+y+'" fill="'+(k===w?"#D9776A":"#A89482")+'" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="'+(k===w?700:500)+'">'+PILLARS[k].label+'</text>';
+ }).join("");
+ return '<svg class="radar" viewBox="0 0 '+size+' '+size+'" aria-label="Gráfico dos quatro pilares">'+grid+
+ '<polygon points="'+poly+'" fill="#B8912B" fill-opacity=".18" stroke="#B8912B" stroke-width="2"/>'+
+ pts.map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(p[2]===w?7:4)+'" fill="'+(p[2]===w?"#A23E2E":"#D4AF37")+'"/>').join("")+labels+'</svg>';
+}
+
+function render(){
+ if(state.step==="splash"){
+   root.innerHTML='<div class="splash" onclick="start()"><div><div class="logo">OVOM <span class="gold">Gargalo Mental</span></div><div class="smallcaps" style="margin-top:24px">toque para começar</div></div></div>';
+   return;
+ }
+ let header='<div class="header"><span>OVOM · Gargalo Mental</span><div class="progress"><i style="width:'+(state.step==="quiz"?((state.index)/QUESTIONS.length*100):100)+'%"></i></div></div>';
+ if(state.step==="intro"){
+   root.innerHTML='<div class="app">'+header+'<div class="intro">'+
+   '<div style="font-size:76px;margin-bottom:24px">◈</div>'+
+   '<h1>OVOM <span class="gold">Gargalo Mental</span></h1>'+
+   '<div class="subtitle">O teste que mostra onde a sua mente trava — e o que fazer para destravar.</div>'+
+   '<p class="lead">12 perguntas. Sem certo ou errado. O objetivo não é te avaliar — é mostrar qual raiz da sua vida está mais fraca hoje: confiança, mentalidade, atitude ou ação.</p>'+
+   '<p class="quote">“A venda mais importante não é a de um produto. É a de acreditar em si mesmo.”</p>'+
+   '<p class="smallcaps" style="margin-bottom:30px">baseado no livro de Carlos Gomes</p>'+
+   '<button class="btn" onclick="beginQuiz()">Começar diagnóstico</button></div></div>';
+   return;
+ }
+ if(state.step==="quiz"){
+   const q=QUESTIONS[state.index];
+   root.innerHTML='<div class="app">'+header+
+   '<div class="question-num">'+String(state.index+1).padStart(2,"0")+' / '+String(QUESTIONS.length).padStart(2,"0")+'</div>'+
+   '<h2 class="question">'+esc(q.text)+'</h2><div class="options">'+
+   SCALE.map(o=>'<button class="option" onclick="answer('+o[0]+')"><strong>'+o[0]+'</strong> — '+o[1]+'</button>').join("")+
+   '</div><div class="note">Escolha a alternativa que mais se aproxima de você hoje.</div></div>';
+   return;
+ }
+ const s=scores(),w=weakest(s),st=strongest(s),p=PILLARS[w];
+ root.innerHTML='<div class="app">'+header+'<div class="result">'+
+ '<div class="smallcaps">seu diagnóstico</div>'+
+ radar(s,w)+
+ '<div class="smallcaps">seu principal gargalo</div>'+
+ '<h2 class="weak">'+p.label+'</h2>'+
+ '<div class="card"><h3 style="margin-top:0;font-family:Georgia,serif;font-size:25px">'+p.title+'</h3><p style="color:#B7AF9F;line-height:1.7">'+p.body+'</p></div>'+
+ '<div class="card"><strong>Seu ponto mais forte:</strong> '+PILLARS[st].label+'</div>'+
+ '<div class="actions"><button class="btn" onclick="share()">Compartilhar no WhatsApp</button><button class="btn" style="background:#2B261D;color:#F3ECDD" onclick="restart()">Refazer diagnóstico</button></div>'+
+ '<div class="note">O resultado é uma ferramenta de reflexão e não uma avaliação psicológica ou clínica.</div>'+
+ '</div></div>';
+}
+
+window.start=function(){state.step="intro";render()};
+window.beginQuiz=function(){state.step="quiz";state.index=0;state.answers={};render()};
+window.answer=function(v){
+ const q=QUESTIONS[state.index];state.answers[q.id]=Number(v);
+ if(state.index<QUESTIONS.length-1){state.index++;render()}else{state.step="result";render()}
+};
+window.restart=function(){state={step:"intro",index:0,answers:{}};render()};
+window.share=function(){
+ const s=scores(),w=weakest(s),p=PILLARS[w];
+ const msg="*OVOM · Gargalo Mental*\\n\\nMeu principal gargalo hoje: *"+p.label+"*\\n\\n"+p.title+"\\n\\n"+p.body+"\\n\\nFaça o seu diagnóstico também.";
+ const url="https://wa.me/?text="+encodeURIComponent(msg);
+ window.open(url,"_blank");
+};
+render();
+})();
+</script>
+</body>
+</html>
